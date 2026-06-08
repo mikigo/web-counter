@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "web-counter"
+version = "0.1.0"
+description = "A self-hosted website visit counter with zero-config frontend integration"
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]",
+    "aiosqlite",
+    "bcrypt",
+    "python-multipart",
+]
+
+[project.scripts]
+web-counter = "web_counter.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["web_counter*"]
+
+[tool.setuptools.package-data]
+web_counter = ["static/*.js", "templates/*.html"]

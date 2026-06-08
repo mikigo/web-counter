@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(export COUNTER_SALT=\"test-salt-1234567890\")",
+      "Bash(web-counter export-js:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill:*)",
+      "Bash(twine check:*)",
+      "Bash(twine upload:*)"
+    ]
+  }
+}

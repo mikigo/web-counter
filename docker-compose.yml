@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  web-counter:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - COUNTER_SALT=${COUNTER_SALT:-change-me}
+      - COUNTER_HOST=0.0.0.0
+      - COUNTER_PORT=8000
+      - COUNTER_DB_PATH=/app/data/counter.db
+      - COUNTER_PID_FILE=/app/data/counter.pid
+      - COUNTER_ALLOWED_ORIGINS=*
+      - COUNTER_RATE_LIMIT=60
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
