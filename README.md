@@ -55,6 +55,7 @@ web-counter createsuperuser
 | `data-pv-site` | 总访问量 |
 | `data-uv-site` | 总访客数 |
 | `data-pv-page` | 当前页面阅读量 |
+| `data-pv-top` | 热门排行列表，属性值为显示条数（如 `<ol data-pv-top="10">`） |
 | `data-counter-style` | 展示风格：`default` / `badge` / `card` / `bordered` |
 | `data-counter-api` | 手动指定 API 基地址（JS 独立部署时使用） |
 
@@ -113,6 +114,7 @@ web-counter export-js       # 导出 counter.js 到 stdout
 | POST | `/api/admin/logout` | 退出登录 |
 | POST | `/api/admin/reset` | 重置数据（需登录） |
 | GET/POST | `/api/admin/offset` | 查看/设置起始值（需登录） |
+| GET | `/api/top?limit=10` | 阅读量排行榜 |
 
 ## 生产环境部署
 
@@ -149,6 +151,27 @@ WantedBy=multi-user.target
 ```bash
 docker compose up -d
 ```
+
+## 阅读量排行榜
+
+### 嵌入式组件
+
+在页面中放置 `<ol data-pv-top="10"></ol>` 即可显示热门文章排行。
+
+### API 接口
+
+```bash
+curl https://你的域名/api/top?limit=10
+# → [{"path":"/blog/hello","title":"文章标题","count":123}, ...]
+```
+
+支持 `?exclude=/` 排除指定路径，`*` 通配符匹配（如 `*/index.html`）。
+
+排行榜中的文章标题自动从页面 `<title>` 采集。
+
+### Dashboard 管理
+
+后台 Dashboard 排行榜区域支持配置显示数量、排除路径，设置持久化存储。
 
 ## 数据管理
 

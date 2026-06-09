@@ -42,7 +42,7 @@ cli.py           ← main.py, config.py, database.py, auth.py
 
 - **`config.py`** — `_load_dotenv()` runs at module import time. `Config(**kwargs)` merges kwargs > env > .env > defaults. Must call `.validate()` to enforce `salt` is set.
 - **`models.py`** — Pydantic v2 models: `VisitRequest`, `OffsetRequest`, `ResetRequest`, `LoginRequest`.
-- **`database.py`** — All async SQLite via aiosqlite. Every function opens a new connection (WAL mode), does its work, commits, and closes. No connection pooling.
+- **`database.py`** — All async SQLite via aiosqlite. Every function opens a new connection (WAL mode), does its work, commits, and closes. No connection pooling. Tables: `visits`, `offsets`, `admin_users`, `page_titles`.
 - **`rate_limit.py`** — `RateLimiter` class with per-IP token bucket, 60s sliding window, stored in a `defaultdict`.
 - **`auth.py`** — bcrypt password hashing. Sessions stored in module-level dict (`token → {username, created_at}`), 24h expiry, not persisted to DB.
 - **`dashboard.py`** — Two pure functions returning complete HTML documents: `get_login_html(error)` and `get_dashboard_html(today_pv, today_uv, site_pv, site_uv, offsets, daily_stats)`. Dashboard embeds initial data as JSON and uses Chart.js CDN for the 30-day trend chart.
@@ -61,7 +61,11 @@ cli.py           ← main.py, config.py, database.py, auth.py
 
 **Frontend counter.js**: Discovers API base URL from `data-counter-api` attribute or `document.currentScript.src`. Scans DOM for `data-pv-today/uv-today/pv-site/uv-site/pv-page` attributes. Concurrently POSTs `/api/visit` and GETs `/api/count`. Counters are initially `display:none` and only revealed on successful data fetch. Supports `data-counter-style` values: `default`, `badge`, `card`, `bordered`. All errors are silently swallowed.
 
-**SPA support (v0.2.0)**: Uses `MutationObserver` with 150ms debounce to detect DOM changes from client-side navigation. When counter elements are re-inserted into the DOM (common in Rspress/VitePress/React sites), automatically re-scans and re-fetches counts. Multiple counter containers on a page are all made visible independently.
+**SPA support (v0.2.0)**: Uses `MutationObserver` with 150ms debounce to detect DOM changes from client-side navigation. When counter elements are re-inserted into the DOM, automatically re-scans and re-fetches counts. Multiple counter containers on a page are all made visible independently.
+
+**Leaderboard (v0.3.0)**: `GET /api/top?limit=N&exclude=PATHS` returns top pages by view count with titles from `page_titles` table. Supports `*` wildcard excludes (`*/index.html`). Dashboard management UI for exclude list and display limit. Frontend widget: `<ol data-pv-top="10"></ol>`. Page titles auto-collected from `document.title` on each visit.
+
+**Integration skills**: `skills/rspress-web-counter/` and `skills/vitepress-web-counter/` provide step-by-step integration guides for each framework, covering head config, footer stats, afterDocContent/doc-footer-before counters, leaderboard, and deployment flows.
 
 **Integration caveats**:
 - Rspress `head` config: Do not use boolean attributes (`async: true`). Rspress serializes `{ async: true, src: '...' }` as `<script asyncsrc="...">` (attribute concatenation bug). Use `{ src: '/counter.js' }` without boolean attrs.
