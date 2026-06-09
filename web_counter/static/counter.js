@@ -92,49 +92,57 @@
       ? (counters.pvPage.getAttribute("data-pv-page") || currentPath)
       : "";
 
-    try {
-      // Only record visit on actual page navigation (not same-page re-render)
-      if (isNewPage) {
+    // --- Query count and update DOM ---
+    function fetchCount() {
+      try {
+        var xhrCount = new XMLHttpRequest();
+        xhrCount.open("GET", apiBase + "/api/count?paths=" + encodeURIComponent(pagePaths.join(",")), true);
+        xhrCount.timeout = 3000;
+        xhrCount.onload = function () {
+          if (xhrCount.status !== 200) return;
+          try {
+            var d = JSON.parse(xhrCount.responseText);
+            if (counters.pvToday) counters.pvToday.textContent = fmt(d.today_pv);
+            if (counters.uvToday) counters.uvToday.textContent = fmt(d.today_uv);
+            if (counters.pvSite) counters.pvSite.textContent = fmt(d.site_pv);
+            if (counters.uvSite) counters.uvSite.textContent = fmt(d.site_uv);
+            if (counters.pvPage && d.pages) {
+              if (d.pages[pvPageKey] !== undefined) {
+                counters.pvPage.textContent = fmt(d.pages[pvPageKey]);
+              }
+            }
+            // Make all counter containers visible
+            var allEls = [counters.pvToday, counters.uvToday, counters.pvSite, counters.uvSite, counters.pvPage];
+            var seen = {};
+            for (var i = 0; i < allEls.length; i++) {
+              var el = allEls[i];
+              if (!el) continue;
+              var container = findContainer(el);
+              if (!container || seen[container._wcId]) continue;
+              container._wcId = 1; seen[container._wcId] = true;
+              var s = (container.getAttribute && container.getAttribute("data-counter-style")) || "default";
+              applyStyle(container, s);
+            }
+          } catch (e) { /* silent */ }
+        };
+        xhrCount.send();
+      } catch (e) { /* silent */ }
+    }
+
+    // If new page, send visit first then query count (ensures count includes this visit)
+    if (isNewPage) {
+      try {
         var xhrVisit = new XMLHttpRequest();
         xhrVisit.open("POST", apiBase + "/api/visit", true);
         xhrVisit.setRequestHeader("Content-Type", "application/json");
         xhrVisit.timeout = 3000;
+        xhrVisit.onloadend = function () { fetchCount(); };
         xhrVisit.send(JSON.stringify({ path: currentPath }));
         _lastPath = currentPath;
-      }
-
-      var xhrCount = new XMLHttpRequest();
-      xhrCount.open("GET", apiBase + "/api/count?paths=" + encodeURIComponent(pagePaths.join(",")), true);
-      xhrCount.timeout = 3000;
-      xhrCount.onload = function () {
-        if (xhrCount.status !== 200) return;
-        try {
-          var d = JSON.parse(xhrCount.responseText);
-          if (counters.pvToday) counters.pvToday.textContent = fmt(d.today_pv);
-          if (counters.uvToday) counters.uvToday.textContent = fmt(d.today_uv);
-          if (counters.pvSite) counters.pvSite.textContent = fmt(d.site_pv);
-          if (counters.uvSite) counters.uvSite.textContent = fmt(d.site_uv);
-          if (counters.pvPage && d.pages) {
-            if (d.pages[pvPageKey] !== undefined) {
-              counters.pvPage.textContent = fmt(d.pages[pvPageKey]);
-            }
-          }
-          // Make all counter containers visible
-          var allEls = [counters.pvToday, counters.uvToday, counters.pvSite, counters.uvSite, counters.pvPage];
-          var seen = {};
-          for (var i = 0; i < allEls.length; i++) {
-            var el = allEls[i];
-            if (!el) continue;
-            var container = findContainer(el);
-            if (!container || seen[container._wcId]) continue;
-            container._wcId = 1; seen[container._wcId] = true;
-            var s = (container.getAttribute && container.getAttribute("data-counter-style")) || "default";
-            applyStyle(container, s);
-          }
-        } catch (e) { /* silent */ }
-      };
-      xhrCount.send();
-    } catch (e) { /* silent */ }
+      } catch (e) { /* silent */ }
+    } else {
+      fetchCount();
+    }
   }
 
   // --- Initial run ---
