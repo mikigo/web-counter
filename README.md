@@ -60,15 +60,21 @@ web-counter createsuperuser
 
 ### SPA 支持
 
-对于 Vue/React 等单页应用，路由切换不会触发计数。可在路由切换后手动上报：
+v0.2.0 起 counter.js 内置 MutationObserver，自动检测客户端路由切换导致 DOM 变化并重新填充计数器，无需手动处理。
+
+如需在路由切换时上报访问（不影响计数器显示），可在路由守卫中手动调用：
 
 ```js
-fetch('https://你的域名/api/visit', {
+fetch('/api/visit', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ path: window.location.pathname })
 })
 ```
+
+### 页面阅读量
+
+在文章内容区放置 `<span data-pv-page></span>` 即可显示当前页面阅读量。**注意**：在 JSX/TSX 中必须显式写为空字符串 `<span data-pv-page=""></span>`，否则 React 会渲染为 `data-pv-page="true"` 导致路径错误。
 
 ## CLI 命令
 
