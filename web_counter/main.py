@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse, Response
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse, Response
 
 from .auth import (
     create_session,
@@ -157,15 +157,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             return HTMLResponse(get_login_html("用户名或密码错误"), status_code=401)
 
         token = create_session(username)
-        today_pv, today_uv, site_pv, site_uv, _ = await get_counts(config.db_path, "")
-        offsets = await get_offsets(config.db_path)
-        daily_stats = await get_daily_stats(config.db_path, 30)
-
-        resp = HTMLResponse(get_dashboard_html(
-            today_pv=today_pv, today_uv=today_uv,
-            site_pv=site_pv, site_uv=site_uv,
-            offsets=offsets, daily_stats=daily_stats,
-        ))
+        resp = RedirectResponse(url="/dashboard", status_code=302)
         resp.set_cookie(
             "session", token,
             httponly=True, samesite="lax", max_age=86400, path="/",
