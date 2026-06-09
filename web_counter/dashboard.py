@@ -165,7 +165,7 @@ def get_dashboard_html(
       <div class="row">
         <div class="field" style="flex:1">
           <label>排除路径（逗号分隔）</label>
-          <input type="text" id="excludeInput" placeholder="如: /, /index.html, /about">
+          <input type="text" id="excludeInput" placeholder="如: /, */index.html, /about/*">
         </div>
         <button class="btn btn-primary" onclick="saveExclude()" style="margin-top:20px">保存排除项</button>
       </div>

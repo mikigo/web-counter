@@ -227,7 +227,8 @@ async def get_daily_stats(db_path: str, days: int = 30) -> list:
 
 
 async def get_top_pages(db_path: str, limit: int = 10, exclude: str = "") -> list:
-    """Get top pages by total view count, excluding specified paths (comma-separated)."""
+    """Get top pages by total view count. exclude supports * wildcards (e.g. */index.html)."""
+    from urllib.parse import unquote
     db = await _connect(db_path)
 
     exclude_list = [p.strip() for p in exclude.split(",") if p.strip()]
@@ -237,19 +238,28 @@ async def get_top_pages(db_path: str, limit: int = 10, exclude: str = "") -> lis
         if row and row[0]:
             exclude_list = [p.strip() for p in row[0].split(",") if p.strip()]
         else:
-            exclude_list = ["/", "/index.html"]
+            exclude_list = ["/", "*/index.html"]
 
-    if exclude_list:
-        placeholders = ",".join(["?"] * len(exclude_list))
-        cursor = await db.execute(
-            f"SELECT path, COUNT(*) as cnt FROM visits WHERE path NOT IN ({placeholders}) GROUP BY path ORDER BY cnt DESC LIMIT ?",
-            (*exclude_list, limit)
-        )
-    else:
-        cursor = await db.execute(
-            "SELECT path, COUNT(*) as cnt FROM visits GROUP BY path ORDER BY cnt DESC LIMIT ?",
-            (limit,)
-        )
+    # Separate wildcard (*) and exact excludes
+    wild_excludes = [p.replace("*", "%") for p in exclude_list if "*" in p]
+    exact_excludes = [p for p in exclude_list if "*" not in p]
+
+    # Build WHERE clause
+    conditions = []
+    params = []
+    if exact_excludes:
+        conditions.append(f"path NOT IN ({','.join('?' * len(exact_excludes))})")
+        params.extend(exact_excludes)
+    for w in wild_excludes:
+        conditions.append("path NOT LIKE ?")
+        params.append(w)
+
+    where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+    cursor = await db.execute(
+        f"SELECT path, COUNT(*) as cnt FROM visits {where} GROUP BY path ORDER BY cnt DESC LIMIT ?",
+        (*params, limit)
+    )
     rows = await cursor.fetchall()
 
     # Get all page offsets at once
@@ -257,14 +267,14 @@ async def get_top_pages(db_path: str, limit: int = 10, exclude: str = "") -> lis
     offset_rows = await cursor.fetchall()
     offsets = {}
     for row in offset_rows:
-        page_path = row[0][5:]  # Strip 'page_' prefix
+        page_path = row[0][5:]
         offsets[page_path] = row[1]
 
     results = []
     for row in rows:
         path = row[0]
         count = row[1] + offsets.get(path, 0)
-        results.append({"path": path, "count": count})
+        results.append({"path": unquote(path), "count": count})
 
     await db.close()
     return results
