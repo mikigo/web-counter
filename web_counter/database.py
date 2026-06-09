@@ -232,13 +232,24 @@ async def get_top_pages(db_path: str, limit: int = 10, exclude: str = "") -> lis
 
     exclude_list = [p.strip() for p in exclude.split(",") if p.strip()]
     if not exclude_list:
-        exclude_list = ["/", "/index.html"]  # Default: exclude homepage
+        cursor = await db.execute("SELECT value FROM offsets WHERE key = ?", ("top_exclude",))
+        row = await cursor.fetchone()
+        if row and row[0]:
+            exclude_list = [p.strip() for p in row[0].split(",") if p.strip()]
+        else:
+            exclude_list = ["/", "/index.html"]
 
-    placeholders = ",".join(["?"] * len(exclude_list))
-    cursor = await db.execute(
-        f"SELECT path, COUNT(*) as cnt FROM visits WHERE path NOT IN ({placeholders}) GROUP BY path ORDER BY cnt DESC LIMIT ?",
-        (*exclude_list, limit)
-    )
+    if exclude_list:
+        placeholders = ",".join(["?"] * len(exclude_list))
+        cursor = await db.execute(
+            f"SELECT path, COUNT(*) as cnt FROM visits WHERE path NOT IN ({placeholders}) GROUP BY path ORDER BY cnt DESC LIMIT ?",
+            (*exclude_list, limit)
+        )
+    else:
+        cursor = await db.execute(
+            "SELECT path, COUNT(*) as cnt FROM visits GROUP BY path ORDER BY cnt DESC LIMIT ?",
+            (limit,)
+        )
     rows = await cursor.fetchall()
 
     # Get all page offsets at once

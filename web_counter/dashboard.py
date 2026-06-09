@@ -161,6 +161,15 @@ def get_dashboard_html(
       <thead><tr><th class="rank">#</th><th>页面</th><th class="count">阅读量</th></tr></thead>
       <tbody id="topPagesBody"><tr><td colspan="3" style="text-align:center;color:#999">加载中...</td></tr></tbody>
     </table>
+    <div style="margin-top:16px; padding-top:12px; border-top:1px solid #eee;">
+      <div class="row">
+        <div class="field" style="flex:1">
+          <label>排除路径（逗号分隔）</label>
+          <input type="text" id="excludeInput" placeholder="如: /, /index.html, /about">
+        </div>
+        <button class="btn btn-primary" onclick="saveExclude()" style="margin-top:20px">保存排除项</button>
+      </div>
+    </div>
   </div>
 
   <div class="section">
@@ -299,6 +308,23 @@ def get_dashboard_html(
     }}).catch(function(){{}});
   }}
   loadTopPages();
+
+  // Exclude management
+  function loadExclude() {{
+    fetch('/api/admin/top-exclude').then(function(r){{ return r.json(); }}).then(function(d) {{
+      document.getElementById('excludeInput').value = (d.paths || []).join(', ');
+    }}).catch(function(){{}});
+  }}
+  loadExclude();
+
+  async function saveExclude() {{
+    var paths = document.getElementById('excludeInput').value.split(',').map(function(p){{ return p.trim(); }}).filter(Boolean);
+    var resp = await fetch('/api/admin/top-exclude', {{
+      method:'POST', headers:{{'Content-Type':'application/json'}}, body:JSON.stringify({{paths: paths}})
+    }});
+    if (resp.ok) {{ toast('排除项已保存'); loadTopPages(); }}
+    else toast('保存失败', 'error');
+  }}
 
   // Auto-refresh every 30s
   setInterval(function() {{
