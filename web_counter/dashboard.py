@@ -164,10 +164,14 @@ def get_dashboard_html(
     <div style="margin-top:16px; padding-top:12px; border-top:1px solid #eee;">
       <div class="row">
         <div class="field" style="flex:1">
-          <label>排除路径（逗号分隔）</label>
+          <label>排除路径（逗号分隔，支持 * 通配符）</label>
           <input type="text" id="excludeInput" placeholder="如: /, */index.html, /about/*">
         </div>
-        <button class="btn btn-primary" onclick="saveExclude()" style="margin-top:20px">保存排除项</button>
+        <div class="field" style="width:100px">
+          <label>显示数量</label>
+          <input type="number" id="topLimitInput" value="20" min="5" max="200" style="width:100px">
+        </div>
+        <button class="btn btn-primary" onclick="saveExclude()" style="margin-top:20px">保存</button>
       </div>
     </div>
   </div>
@@ -294,7 +298,8 @@ def get_dashboard_html(
 
   // Leaderboard
   function loadTopPages() {{
-    fetch('/api/top?limit=20').then(function(r){{ return r.json(); }}).then(function(pages) {{
+    var limit = document.getElementById('topLimitInput').value || 20;
+    fetch('/api/top?limit=' + limit).then(function(r){{ return r.json(); }}).then(function(pages) {{
       var html = '';
       if (pages.length === 0) {{
         html = '<tr><td colspan="3" style="text-align:center;color:#999">暂无数据</td></tr>';
@@ -309,20 +314,22 @@ def get_dashboard_html(
   }}
   loadTopPages();
 
-  // Exclude management
-  function loadExclude() {{
+  // Exclude & limit management
+  function loadTopSettings() {{
     fetch('/api/admin/top-exclude').then(function(r){{ return r.json(); }}).then(function(d) {{
       document.getElementById('excludeInput').value = (d.paths || []).join(', ');
+      document.getElementById('topLimitInput').value = d.limit || 20;
     }}).catch(function(){{}});
   }}
-  loadExclude();
+  loadTopSettings();
 
   async function saveExclude() {{
     var paths = document.getElementById('excludeInput').value.split(',').map(function(p){{ return p.trim(); }}).filter(Boolean);
+    var limit = parseInt(document.getElementById('topLimitInput').value) || 20;
     var resp = await fetch('/api/admin/top-exclude', {{
-      method:'POST', headers:{{'Content-Type':'application/json'}}, body:JSON.stringify({{paths: paths}})
+      method:'POST', headers:{{'Content-Type':'application/json'}}, body:JSON.stringify({{paths: paths, limit: limit}})
     }});
-    if (resp.ok) {{ toast('排除项已保存'); loadTopPages(); }}
+    if (resp.ok) {{ toast('设置已保存'); loadTopPages(); }}
     else toast('保存失败', 'error');
   }}
 

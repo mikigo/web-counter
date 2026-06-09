@@ -208,7 +208,11 @@ def create_app(config: Config | None = None) -> FastAPI:
             raise HTTPException(401, "Not authenticated")
         offsets = await get_offsets(config.db_path)
         val = offsets.get("top_exclude", "")
-        return {"paths": [p.strip() for p in val.split(",") if p.strip()]}
+        limit_val = offsets.get("top_limit", "20")
+        return {
+            "paths": [p.strip() for p in val.split(",") if p.strip()],
+            "limit": int(limit_val) if limit_val.isdigit() else 20,
+        }
 
     # --- Admin: Set top exclude ---
     @app.post("/api/admin/top-exclude")
@@ -218,10 +222,13 @@ def create_app(config: Config | None = None) -> FastAPI:
             raise HTTPException(401, "Not authenticated")
         body = await request.json()
         paths = body.get("paths", [])
+        limit = str(body.get("limit", 20))
         import aiosqlite
         db = await aiosqlite.connect(config.db_path)
         await db.execute("INSERT OR REPLACE INTO offsets (key, value) VALUES (?, ?)",
                          ("top_exclude", ",".join(paths)))
+        await db.execute("INSERT OR REPLACE INTO offsets (key, value) VALUES (?, ?)",
+                         ("top_limit", limit))
         await db.commit()
         await db.close()
         return {"status": "ok"}
