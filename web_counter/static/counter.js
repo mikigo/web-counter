@@ -146,8 +146,12 @@
   }
 
   // --- Top pages widget (data-pv-top) ---
-  function loadTopWidget() {
+  function loadTopWidget(retry) {
     var containers = document.querySelectorAll("[data-pv-top]");
+    if (containers.length === 0 && (retry || 0) < 5) {
+      setTimeout(function () { loadTopWidget((retry || 0) + 1); }, 500);
+      return;
+    }
     containers.forEach(function (el) {
       var limit = parseInt(el.getAttribute("data-pv-top")) || 10;
       var isTable = el.tagName === "DIV";
