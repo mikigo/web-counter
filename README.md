@@ -12,6 +12,17 @@
 | 总访客数 (UV Site) | 建站以来的累计独立访客数 |
 | 页面阅读量 (PV Page) | 当前页面的累计访问次数 |
 
+## 阅读量排行榜
+
+在页面中放置 `<ol data-pv-top="10"></ol>` 即可显示热门文章排行，标题自动从页面 `<title>` 采集。
+
+```bash
+curl https://你的域名/api/top?limit=10
+# → [{"path":"/blog/hello","title":"文章标题","count":123}, ...]
+```
+
+支持 `?exclude=/` 排除指定路径，`*` 通配符（如 `*/index.html`）。Dashboard 支持可视化配置排除项和显示数量。
+
 ## 快速开始
 
 ```bash
@@ -168,27 +179,6 @@ WantedBy=multi-user.target
 ```bash
 docker compose up -d
 ```
-
-## 阅读量排行榜
-
-### 嵌入式组件
-
-在页面中放置 `<ol data-pv-top="10"></ol>` 即可显示热门文章排行。
-
-### API 接口
-
-```bash
-curl https://你的域名/api/top?limit=10
-# → [{"path":"/blog/hello","title":"文章标题","count":123}, ...]
-```
-
-支持 `?exclude=/` 排除指定路径，`*` 通配符匹配（如 `*/index.html`）。
-
-排行榜中的文章标题自动从页面 `<title>` 采集。
-
-### Dashboard 管理
-
-后台 Dashboard 排行榜区域支持配置显示数量、排除路径，设置持久化存储。
 
 ## 数据管理
 
