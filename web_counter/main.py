@@ -98,8 +98,8 @@ def create_app(config: Config | None = None) -> FastAPI:
 
     # --- Get top pages ---
     @app.get("/api/top")
-    async def top_pages(limit: int = 10):
-        return await get_top_pages(config.db_path, limit)
+    async def top_pages(limit: int = 10, exclude: str = ""):
+        return await get_top_pages(config.db_path, limit, exclude)
 
     # --- Auth helper ---
     def _get_user(request: Request) -> str | None:

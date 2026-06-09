@@ -226,14 +226,18 @@ async def get_daily_stats(db_path: str, days: int = 30) -> list:
     return results
 
 
-async def get_top_pages(db_path: str, limit: int = 10) -> list:
-    """Get top pages by total view count (with offsets applied)."""
+async def get_top_pages(db_path: str, limit: int = 10, exclude: str = "") -> list:
+    """Get top pages by total view count, excluding specified paths (comma-separated)."""
     db = await _connect(db_path)
 
-    # Get page counts
+    exclude_list = [p.strip() for p in exclude.split(",") if p.strip()]
+    if not exclude_list:
+        exclude_list = ["/", "/index.html"]  # Default: exclude homepage
+
+    placeholders = ",".join(["?"] * len(exclude_list))
     cursor = await db.execute(
-        "SELECT path, COUNT(*) as cnt FROM visits GROUP BY path ORDER BY cnt DESC LIMIT ?",
-        (limit,)
+        f"SELECT path, COUNT(*) as cnt FROM visits WHERE path NOT IN ({placeholders}) GROUP BY path ORDER BY cnt DESC LIMIT ?",
+        (*exclude_list, limit)
     )
     rows = await cursor.fetchall()
 

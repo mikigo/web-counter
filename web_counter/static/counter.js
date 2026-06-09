@@ -145,11 +145,42 @@
     }
   }
 
+  // --- Top pages widget (data-pv-top) ---
+  function loadTopWidget() {
+    var lists = document.querySelectorAll("[data-pv-top]");
+    lists.forEach(function (list) {
+      var limit = parseInt(list.getAttribute("data-pv-top")) || 10;
+      list.style.display = "none";
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", apiBase + "/api/top?limit=" + limit, true);
+        xhr.timeout = 3000;
+        xhr.onload = function () {
+          if (xhr.status !== 200) return;
+          try {
+            var pages = JSON.parse(xhr.responseText);
+            var html = "";
+            pages.forEach(function (p, i) {
+              html += "<li><a href=\"" + p.path + "\">" + p.path + "</a> <span>(" + fmt(p.count) + ")</span></li>";
+            });
+            list.innerHTML = html;
+            list.style.display = "";
+          } catch (e) { /* silent */ }
+        };
+        xhr.send();
+      } catch (e) { /* silent */ }
+    });
+  }
+
   // --- Initial run ---
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", refresh);
-  } else {
+  function init() {
     refresh();
+    loadTopWidget();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
   }
 
   // --- SPA support: watch for re-rendered counter elements ---
@@ -167,14 +198,28 @@
               node.hasAttribute("data-pv-page")
             )) {
               clearTimeout(debounce);
-              debounce = setTimeout(refresh, 150);
+              debounce = setTimeout(function () { refresh(); loadTopWidget(); }, 150);
               return;
             }
             if (node.querySelectorAll) {
               var found = node.querySelectorAll("[data-pv-today],[data-pv-site],[data-uv-today],[data-uv-site],[data-pv-page]");
               if (found.length > 0) {
                 clearTimeout(debounce);
-                debounce = setTimeout(refresh, 150);
+                debounce = setTimeout(function () { refresh(); loadTopWidget(); }, 150);
+                return;
+              }
+            }
+            // Also check for top widget re-render
+            if (node.hasAttribute && node.hasAttribute("data-pv-top")) {
+              clearTimeout(debounce);
+              debounce = setTimeout(function () { refresh(); loadTopWidget(); }, 150);
+              return;
+            }
+            if (node.querySelectorAll) {
+              var foundTop = node.querySelectorAll("[data-pv-top]");
+              if (foundTop.length > 0) {
+                clearTimeout(debounce);
+                debounce = setTimeout(function () { refresh(); loadTopWidget(); }, 150);
                 return;
               }
             }
