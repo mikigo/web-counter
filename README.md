@@ -1,118 +1,123 @@
 # web-counter
 
-一个开源、可自托管的网站访问计数服务。一行命令部署，一行 `<script>` 接入，数据完全由你掌控。
+<div align="center">
 
-## 统计指标
+**轻量、隐私优先、开箱即用的网站访问计数器**
 
-| 指标 | 含义 |
-|------|------|
-| 今日访问量 (PV Today) | 今天所有页面的总访问次数 |
-| 今日访客数 (UV Today) | 今天的独立访客数（IP + salt 哈希去重） |
-| 总访问量 (PV Site) | 建站以来所有页面的累计访问次数 |
-| 总访客数 (UV Site) | 建站以来的累计独立访客数 |
-| 页面阅读量 (PV Page) | 当前页面的累计访问次数 |
+一行命令部署，一个 `<script>` 接入，一行 HTML 展示。数据完全由你掌控。
 
-## 阅读量排行榜
+[![PyPI](https://img.shields.io/pypi/v/web-counter)](https://pypi.org/project/web-counter/)
+[![Python](https://img.shields.io/pypi/pyversions/web-counter)](https://pypi.org/project/web-counter/)
+[![License](https://img.shields.io/pypi/l/web-counter)](./LICENSE)
 
-在页面中放置 `<ol data-pv-top="10"></ol>` 即可显示热门文章排行，标题自动从页面 `<title>` 采集。
+</div>
 
-```bash
-curl https://你的域名/api/top?limit=10
-# → [{"path":"/blog/hello","title":"文章标题","count":123}, ...]
-```
-
-支持 `?exclude=/` 排除指定路径，`*` 通配符（如 `*/index.html`）。Dashboard 支持可视化配置排除项和显示数量。
+web-counter 解决的是**静态网站的统计难题**——GitHub Pages、VitePress、Rspress 等没有后端，无法统计访问数据。只需在你的服务器上部署一个轻量服务，所有静态站点就能拥有不输专业平台的访问分析能力。
 
 ## 快速开始
 
 ```bash
-# 1. 安装
-pip install web-counter
+pip install web-counter                                              # 安装
+export COUNTER_SALT="$(openssl rand -hex 16)"                       # 生成密钥
+web-counter start                                                   # 启动服务
+web-counter createsuperuser                                         # 创建管理员
+```
 
-# 2. 设置 salt（必填，用于哈希访客 IP 保护隐私）
-export COUNTER_SALT="$(openssl rand -hex 16)"
+终端会直接打印前端接入代码，复制到网页中即可。就这么简单。
 
-# 3. 启动
-web-counter start
+## 核心特性
 
-# 4. 创建管理员（用于访问统计看板）
-web-counter createsuperuser
+### 实时统计指标
 
-# 5. 将终端输出的代码粘贴到网页 </body> 前，完成接入
+| 指标 | 含义 |
+|------|------|
+| 今日访问量 (PV) | 今日页面总访问次数 |
+| 今日访客数 (UV) | 今日独立访客（IP + salt 哈希去重） |
+| 累计访问量 | 建站以来总访问次数（支持设定初始值） |
+| 累计访客数 | 建站以来独立访客总数（支持设定初始值） |
+| 页面阅读量 | 每篇文章的独立阅读次数 |
+
+### 热门排行榜
+
+`<ol data-pv-top="10"></ol>` 一行代码嵌入热门文章排行。文章标题自动采集，排除规则支持 `*` 通配符，Dashboard 可视化配置。
+
+```bash
+curl https://你的域名/api/top?limit=10
+# → [{"path":"/blog/hello","title":"Redis 入门指南","count":123}, ...]
+```
+
+### 统计看板 Dashboard
+
+登录即用的管理后台，包含实时统计卡片、30 天趋势图（Chart.js）、排行榜管理、数据重置和起始值配置。
+
+### 隐私设计
+
+- 不存储 IP、不设追踪 Cookie、不做浏览器指纹
+- 访客唯一性 = `SHA256(IP + salt)`，salt 仅部署者持有
+- 换 salt 后历史 UV 清零，建议一次设定不再更改
+
+## 前端接入
+
+在页面任意位置插入声明式标签，counter.js 自动填充数据：
+
+```html
+<script async src="/counter.js"></script>
+
+<span style="display:none" class="counter-container" data-counter-style="badge">
+  本站访问量 <span data-pv-site></span> 次 ·
+  访客 <span data-uv-site></span> 人 ·
+  今日 <span data-pv-today></span> 次 ·
+  访客 <span data-uv-today></span> 人
+</span>
+```
+
+计数器初始隐藏（`display:none`），数据加载成功后自动显示；后端不可用时完全无感。
+
+### 数据属性
+
+| 属性 | 效果 | 示例 |
+|------|------|------|
+| `data-pv-today` | 今日 PV | `<span data-pv-today></span>` |
+| `data-uv-today` | 今日 UV | `<span data-uv-today></span>` |
+| `data-pv-site` | 累计 PV | `<span data-pv-site></span>` |
+| `data-uv-site` | 累计 UV | `<span data-uv-site></span>` |
+| `data-pv-page` | 页面阅读量 | `<span data-pv-page=""></span>` |
+| `data-pv-top="N"` | 热门 Top N | `<ol data-pv-top="10"></ol>` |
+| `data-counter-style` | 展示风格 | `badge` / `card` / `bordered` / `default` |
+| `data-counter-api` | 自定义 API 地址 | 适用于 JS 部署到 CDN 场景 |
+
+### SPA 客户端路由
+
+VitePress、Rspress、Next.js 等框架的客户端路由切换不会整页刷新。v0.2.0 起内置 `MutationObserver`，自动检测 DOM 变化并刷新计数器，无需任何额外配置。
+
+### JSX/TSX 注意事项
+
+在 React/Rspress MDX 中使用 `data-pv-page` 必须写空字符串：
+
+```tsx
+<span data-pv-page=""></span>       // ✅ 正确
+<span data-pv-page></span>          // ❌ 渲染为 data-pv-page="true"
 ```
 
 ## Agent Skill（推荐）
 
-项目内置了 Claude Code Skill，能帮助你在 AI 辅助下快速完成 web-counter 的集成和部署：
+内置 Claude Code Skills，涵盖完整集成和部署流程，自动处理框架特有坑点：
 
-| Skill | 适用场景 |
+| Skill | 适用框架 |
 |-------|---------|
-| `rspress-web-counter` | Rspress 文档站集成，含 head 配置、footer 统计、afterDocContent 阅读量、排行榜页面、Caddy/Nginx 反代部署 |
-| `vitepress-web-counter` | VitePress 文档站集成，含自定义主题布局插槽、Vue 组件、footer 统计、排行榜页面、部署配置 |
+| `rspress-web-counter` | Rspress — head 配置、footer 统计、afterDocContent 阅读量、排行榜页面、Caddy/Nginx 反代 |
+| `vitepress-web-counter` | VitePress — Vue SFC 组件、`doc-footer-before` 插槽、自定义 theme 布局、部署配置 |
 
-Skill 覆盖了所有已知的框架特性和踩坑经验：
-- Rspress `head` 布尔属性序列化 bug（`async:true` → `asyncsrc`）
-- JSX 中 `data-pv-page=""` 必须写空字符串
-- VitePress `doc-footer-before` 插槽 vs Rspress `afterDocContent`
-- 同域反代部署、systemd 服务、自动部署流水线
-
-使用方式：在 Claude Code 中提及相关框架名称，Skill 会自动加载完整接入指南。
-
-## 前端接入
-
-在网页 `</body>` 前添加以下代码：
-
-```html
-<script async src="https://你的域名/counter.js"></script>
-
-<!-- 显示计数（放在 display:none 容器中，JS 加载后自动显示） -->
-<span style="display:none" class="counter-container" data-counter-style="card">
-  本站访问次数 <span data-pv-site></span> 次 ·
-  今日访问量 <span data-pv-today></span> 次 ·
-  今日访客 <span data-uv-today></span> 人 ·
-  总访客 <span data-uv-site></span> 人
-</span>
-```
-
-### 数据属性一览
-
-| 属性 | 含义 |
-|------|------|
-| `data-pv-today` | 今日访问量 |
-| `data-uv-today` | 今日访客数 |
-| `data-pv-site` | 总访问量 |
-| `data-uv-site` | 总访客数 |
-| `data-pv-page` | 当前页面阅读量 |
-| `data-pv-top` | 热门排行列表，属性值为显示条数（如 `<ol data-pv-top="10">`） |
-| `data-counter-style` | 展示风格：`default` / `badge` / `card` / `bordered` |
-| `data-counter-api` | 手动指定 API 基地址（JS 独立部署时使用） |
-
-### SPA 支持
-
-v0.2.0 起 counter.js 内置 MutationObserver，自动检测客户端路由切换导致 DOM 变化并重新填充计数器，无需手动处理。
-
-如需在路由切换时上报访问（不影响计数器显示），可在路由守卫中手动调用：
-
-```js
-fetch('/api/visit', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ path: window.location.pathname })
-})
-```
-
-### 页面阅读量
-
-在文章内容区放置 `<span data-pv-page></span>` 即可显示当前页面阅读量。**注意**：在 JSX/TSX 中必须显式写为空字符串 `<span data-pv-page=""></span>`，否则 React 会渲染为 `data-pv-page="true"` 导致路径错误。
+在 Claude Code 对话中包含框架名即可自动加载。
 
 ## CLI 命令
 
 ```bash
-web-counter start           # 后台启动服务
-web-counter restart         # 重启服务
-web-counter stop            # 停止服务
-web-counter createsuperuser # 创建管理员账号
-web-counter export-js       # 导出 counter.js 到 stdout
+web-counter start              # 后台启动
+web-counter stop               # 优雅停止
+web-counter restart            # 重启
+web-counter createsuperuser    # 创建管理员
+web-counter export-js          # 导出 counter.js
 ```
 
 ## 配置
@@ -121,81 +126,83 @@ web-counter export-js       # 导出 counter.js 到 stdout
 
 | 参数 | 环境变量 | 默认值 | 说明 |
 |------|------|--------|------|
-| `--salt` | `COUNTER_SALT` | 无（必填） | IP 哈希盐值 |
+| `--salt` | `COUNTER_SALT` | 必填 | IP 哈希盐值 |
 | `--host` | `COUNTER_HOST` | `0.0.0.0` | 监听地址 |
 | `--port` | `COUNTER_PORT` | `8000` | 监听端口 |
-| `--db-path` | `COUNTER_DB_PATH` | `./data/counter.db` | 数据库路径 |
-| `--pid-file` | `COUNTER_PID_FILE` | `./data/counter.pid` | PID 文件路径 |
-| `--allowed-origins` | `COUNTER_ALLOWED_ORIGINS` | `*` | CORS 允许域名 |
-| `--rate-limit` | `COUNTER_RATE_LIMIT` | `60` | 每 IP 每分钟限流 |
+| `--db-path` | `COUNTER_DB_PATH` | `./data/counter.db` | SQLite 数据文件 |
+| `--pid-file` | `COUNTER_PID_FILE` | `./data/counter.pid` | PID 文件 |
+| `--allowed-origins` | `COUNTER_ALLOWED_ORIGINS` | `*` | CORS 域名（同域部署无需配置） |
+| `--rate-limit` | `COUNTER_RATE_LIMIT` | `60` | 每 IP 每分钟请求上限 |
 
-## API 接口
+## API
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/api/visit` | 记录访问 |
-| GET | `/api/count?paths=/page1,/page2` | 批量查询计数 |
-| GET | `/counter.js` | 获取前端 JS 脚本 |
+| GET | `/api/count?paths=/a,/b` | 批量查询 |
+| GET | `/api/top?limit=10` | 排行榜 |
 | GET | `/api/health` | 健康检查 |
 | GET | `/dashboard` | 统计看板（需登录） |
-| POST | `/api/admin/login` | 管理员登录（JSON） |
-| POST | `/api/admin/logout` | 退出登录 |
+| POST | `/api/admin/login` | 管理员登录 |
+| POST | `/api/admin/logout` | 退出 |
 | POST | `/api/admin/reset` | 重置数据（需登录） |
-| GET/POST | `/api/admin/offset` | 查看/设置起始值（需登录） |
-| GET | `/api/top?limit=10` | 阅读量排行榜 |
+| GET/POST | `/api/admin/offset` | 起始值（需登录） |
 
-## 生产环境部署
+## 生产部署
 
-### 使用反代 (Caddy)
+### Caddy 同域反代（推荐）
 
 ```
-your-domain.com {
-    reverse_proxy localhost:8000
+mysite.site {
+    handle /counter.js { reverse_proxy 127.0.0.1:8000 }
+    handle /api/*      { reverse_proxy 127.0.0.1:8000 }
+    handle /dashboard  { reverse_proxy 127.0.0.1:8000 }
+    root * /var/www/mysite
+    file_server
 }
 ```
 
-### 使用 systemd
+### systemd 守护
 
 ```ini
-[Unit]
-Description=web-counter
-After=network.target
-
 [Service]
-Type=forking
-PIDFile=/opt/web-counter/data/counter.pid
-Environment="COUNTER_SALT=your-random-salt"
-ExecStart=/usr/bin/web-counter start
-ExecStop=/usr/bin/web-counter stop
-ExecReload=/usr/bin/web-counter restart
+Type=simple
+Environment="COUNTER_SALT=<密钥>"
+Environment="COUNTER_HOST=127.0.0.1"
+Environment="COUNTER_PORT=8000"
+ExecStart=python3 -m uvicorn web_counter.main:app --host 127.0.0.1 --port 8000
 Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
 ```
 
-### 使用 Docker
+> 绑 `127.0.0.1` 确保不直接暴露公网，所有请求经反代进入。
+
+### Docker
 
 ```bash
 docker compose up -d
 ```
 
+### 自动部署流水线
+
+```
+push main → GitHub Actions 构建
+               ↓
+       sync-to-gitee 镜像
+               ↓
+     服务器 cron git pull
+               ↓
+       Caddy / Nginx 静态 serve
+```
+
+完整示例见 [DEPLOY.md](./DEPLOY.md)。
+
 ## 数据管理
 
-后台登录 `/dashboard` 后可进行：
+Dashboard 登录后可进行：
 
-- **数据重置**：支持重置今日/全部/指定页面的访问数据
-- **起始值设置**：为累计指标设置偏移量，适用于从其他统计工具迁移
-
-## 隐私设计
-
-- 不存储原始 IP 地址
-- 不设置 Cookie（后台 session cookie 除外）
-- 不做浏览器指纹
-- 访客唯一性通过 `SHA256(IP + salt)` 标识
-- salt 由部署者自行设置，无法被外部反向破解
-
-> **注意**：salt 设定后不要更换，否则历史访客标识失联，UV 统计将清零重来。
+- **数据重置** — 重置今日 / 全部 / 指定页面，全部重置需二次确认
+- **起始值** — 为累计 PV/UV 设置偏移量，适用于从其他统计工具迁入
+- **排行榜排除** — 支持 `*` 通配符排除首页、目录页等，持久化存储
 
 ## License
 
