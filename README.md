@@ -30,6 +30,23 @@ web-counter createsuperuser
 # 5. 将终端输出的代码粘贴到网页 </body> 前，完成接入
 ```
 
+## Agent Skill（推荐）
+
+项目内置了 Claude Code Skill，能帮助你在 AI 辅助下快速完成 web-counter 的集成和部署：
+
+| Skill | 适用场景 |
+|-------|---------|
+| `rspress-web-counter` | Rspress 文档站集成，含 head 配置、footer 统计、afterDocContent 阅读量、排行榜页面、Caddy/Nginx 反代部署 |
+| `vitepress-web-counter` | VitePress 文档站集成，含自定义主题布局插槽、Vue 组件、footer 统计、排行榜页面、部署配置 |
+
+Skill 覆盖了所有已知的框架特性和踩坑经验：
+- Rspress `head` 布尔属性序列化 bug（`async:true` → `asyncsrc`）
+- JSX 中 `data-pv-page=""` 必须写空字符串
+- VitePress `doc-footer-before` 插槽 vs Rspress `afterDocContent`
+- 同域反代部署、systemd 服务、自动部署流水线
+
+使用方式：在 Claude Code 中提及相关框架名称，Skill 会自动加载完整接入指南。
+
 ## 前端接入
 
 在网页 `</body>` 前添加以下代码：
