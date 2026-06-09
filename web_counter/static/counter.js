@@ -137,7 +137,7 @@
         xhrVisit.setRequestHeader("Content-Type", "application/json");
         xhrVisit.timeout = 3000;
         xhrVisit.onloadend = function () { fetchCount(); };
-        xhrVisit.send(JSON.stringify({ path: currentPath }));
+        xhrVisit.send(JSON.stringify({ path: currentPath, title: document.title }));
         _lastPath = currentPath;
       } catch (e) { /* silent */ }
     } else {
@@ -161,7 +161,7 @@
             var pages = JSON.parse(xhr.responseText);
             var html = "";
             pages.forEach(function (p, i) {
-              html += "<li><a href=\"" + p.path + "\">" + p.path + "</a> <span>(" + fmt(p.count) + ")</span></li>";
+              html += "<li><a href=\"" + p.path + "\">" + (p.title || p.path) + "</a> <span>(" + fmt(p.count) + ")</span></li>";
             });
             list.innerHTML = html;
             list.style.display = "";

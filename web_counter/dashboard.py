@@ -301,7 +301,7 @@ def get_dashboard_html(
       }} else {{
         pages.forEach(function(p, i) {{
           var rankClass = i < 3 ? ' top3' : '';
-          html += '<tr><td class="rank' + rankClass + '">' + (i + 1) + '</td><td class="path">' + p.path + '</td><td class="count">' + fmt(p.count) + '</td></tr>';
+          html += '<tr><td class="rank' + rankClass + '">' + (i + 1) + '</td><td class="path"><a href="' + p.path + '">' + (p.title || p.path) + '</a></td><td class="count">' + fmt(p.count) + '</td></tr>';
         }});
       }}
       document.getElementById('topPagesBody').innerHTML = html;

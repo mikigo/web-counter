@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class VisitRequest(BaseModel):
     path: str = "/"
+    title: Optional[str] = None
 
 
 class CountResponse(BaseModel):

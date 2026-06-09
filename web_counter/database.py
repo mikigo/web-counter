@@ -46,6 +46,14 @@ async def init_db(db_path: str):
         )
     """)
 
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS page_titles (
+            path TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
     await db.execute("CREATE INDEX IF NOT EXISTS idx_visits_path ON visits(path)")
     await db.execute("CREATE INDEX IF NOT EXISTS idx_visits_hash ON visits(visitor_hash)")
     await db.execute("CREATE INDEX IF NOT EXISTS idx_visits_date ON visits(visit_date)")
@@ -122,6 +130,19 @@ async def get_counts(db_path: str, paths: str = ""):
 
     await db.close()
     return today_pv, today_uv, site_pv, site_uv, pages
+
+
+async def save_page_title(db_path: str, path: str, title: str):
+    """Save or update the title for a page path."""
+    if not title:
+        return
+    db = await _connect(db_path)
+    await db.execute(
+        "INSERT OR REPLACE INTO page_titles (path, title, updated_at) VALUES (?, ?, datetime('now','localtime'))",
+        (path, title.strip()),
+    )
+    await db.commit()
+    await db.close()
 
 
 async def reset_data(db_path: str, scope: str, path: str = None):
@@ -270,11 +291,28 @@ async def get_top_pages(db_path: str, limit: int = 10, exclude: str = "") -> lis
         page_path = row[0][5:]
         offsets[page_path] = row[1]
 
+    # Get titles for top pages
+    title_map = {}
+    if rows:
+        path_list = [row[0] for row in rows]
+        t_placeholders = ",".join(["?"] * len(path_list))
+        cursor = await db.execute(
+            f"SELECT path, title FROM page_titles WHERE path IN ({t_placeholders})",
+            path_list
+        )
+        for trow in await cursor.fetchall():
+            title_map[trow[0]] = trow[1]
+
     results = []
     for row in rows:
         path = row[0]
         count = row[1] + offsets.get(path, 0)
-        results.append({"path": unquote(path), "count": count})
+        decoded = unquote(path)
+        results.append({
+            "path": decoded,
+            "title": title_map.get(path, decoded),
+            "count": count,
+        })
 
     await db.close()
     return results

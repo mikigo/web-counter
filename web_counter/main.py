@@ -25,6 +25,7 @@ from .database import (
     init_db,
     record_visit,
     reset_data,
+    save_page_title,
     set_offsets,
 )
 from .models import LoginRequest, OffsetRequest, ResetRequest, VisitRequest
@@ -81,6 +82,8 @@ def create_app(config: Config | None = None) -> FastAPI:
         ).hexdigest()
 
         background_tasks.add_task(record_visit, config.db_path, body.path, visitor_hash)
+        if body.title:
+            background_tasks.add_task(save_page_title, config.db_path, body.path, body.title)
         logger.info("Visit: path=%s visitor=%s", body.path, visitor_hash[:8])
         return {"status": "ok"}
 
