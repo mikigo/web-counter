@@ -53,8 +53,22 @@
     return el;
   }
 
+  // --- State ---
+  var _lastRefresh = 0;
+  var _lastPath = "";
+
   // --- Main refresh logic (called on load + SPA navigation) ---
   function refresh() {
+    // Cooldown: prevent double-trigger from MutationObserver + DOMContentLoaded
+    var now = Date.now();
+    if (now - _lastRefresh < 800) return;
+    _lastRefresh = now;
+
+    var currentPath = window.location.pathname;
+
+    // Only record visit if path actually changed (dedupe navigation events)
+    var isNewPage = currentPath !== _lastPath;
+
     var counters = {};
     counters.pvToday = find("data-pv-today");
     counters.uvToday = find("data-uv-today");
@@ -62,24 +76,35 @@
     counters.uvSite = find("data-uv-site");
     counters.pvPage = find("data-pv-page");
 
-    var paths = [];
-    if (counters.pvPage) {
-      paths.push(counters.pvPage.getAttribute("data-pv-page") || window.location.pathname);
-    }
+    // Collect page paths for count query
+    var pagePaths = [];
     document.querySelectorAll("[data-pv-page]").forEach(function (el) {
-      var p = el.getAttribute("data-pv-page") || window.location.pathname;
-      if (paths.indexOf(p) === -1) paths.push(p);
+      var p = el.getAttribute("data-pv-page") || currentPath;
+      if (p && pagePaths.indexOf(p) === -1) pagePaths.push(p);
     });
+    // Fallback: always include current page path
+    if (pagePaths.length === 0 && counters.pvPage) {
+      pagePaths.push(currentPath);
+    }
+
+    // Cache the path used for pvPage lookup
+    var pvPageKey = counters.pvPage
+      ? (counters.pvPage.getAttribute("data-pv-page") || currentPath)
+      : "";
 
     try {
-      var xhrVisit = new XMLHttpRequest();
-      xhrVisit.open("POST", apiBase + "/api/visit", true);
-      xhrVisit.setRequestHeader("Content-Type", "application/json");
-      xhrVisit.timeout = 3000;
-      xhrVisit.send(JSON.stringify({ path: window.location.pathname }));
+      // Only record visit on actual page navigation (not same-page re-render)
+      if (isNewPage) {
+        var xhrVisit = new XMLHttpRequest();
+        xhrVisit.open("POST", apiBase + "/api/visit", true);
+        xhrVisit.setRequestHeader("Content-Type", "application/json");
+        xhrVisit.timeout = 3000;
+        xhrVisit.send(JSON.stringify({ path: currentPath }));
+        _lastPath = currentPath;
+      }
 
       var xhrCount = new XMLHttpRequest();
-      xhrCount.open("GET", apiBase + "/api/count?paths=" + encodeURIComponent(paths.join(",")), true);
+      xhrCount.open("GET", apiBase + "/api/count?paths=" + encodeURIComponent(pagePaths.join(",")), true);
       xhrCount.timeout = 3000;
       xhrCount.onload = function () {
         if (xhrCount.status !== 200) return;
@@ -90,8 +115,9 @@
           if (counters.pvSite) counters.pvSite.textContent = fmt(d.site_pv);
           if (counters.uvSite) counters.uvSite.textContent = fmt(d.site_uv);
           if (counters.pvPage && d.pages) {
-            var pvKey = counters.pvPage.getAttribute("data-pv-page") || window.location.pathname;
-            if (d.pages[pvKey] !== undefined) counters.pvPage.textContent = fmt(d.pages[pvKey]);
+            if (d.pages[pvPageKey] !== undefined) {
+              counters.pvPage.textContent = fmt(d.pages[pvPageKey]);
+            }
           }
           // Make all counter containers visible
           var allEls = [counters.pvToday, counters.uvToday, counters.pvSite, counters.uvSite, counters.pvPage];
@@ -127,7 +153,6 @@
         for (var j = 0; j < added.length; j++) {
           var node = added[j];
           if (node.nodeType === 1) {
-            // Check if added subtree contains counter elements
             if (node.hasAttribute && (
               node.hasAttribute("data-pv-today") || node.hasAttribute("data-uv-today") ||
               node.hasAttribute("data-pv-site") || node.hasAttribute("data-uv-site") ||
