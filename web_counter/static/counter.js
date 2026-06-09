@@ -147,10 +147,11 @@
 
   // --- Top pages widget (data-pv-top) ---
   function loadTopWidget() {
-    var lists = document.querySelectorAll("[data-pv-top]");
-    lists.forEach(function (list) {
-      var limit = parseInt(list.getAttribute("data-pv-top")) || 10;
-      list.style.display = "none";
+    var containers = document.querySelectorAll("[data-pv-top]");
+    containers.forEach(function (el) {
+      var limit = parseInt(el.getAttribute("data-pv-top")) || 10;
+      var isTable = el.tagName === "DIV";
+      el.style.display = "none";
       try {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", apiBase + "/api/top?limit=" + limit, true);
@@ -160,11 +161,33 @@
           try {
             var pages = JSON.parse(xhr.responseText);
             var html = "";
-            pages.forEach(function (p, i) {
-              html += "<li><a href=\"" + p.path + "\">" + (p.title || p.path) + "</a> <span>(" + fmt(p.count) + ")</span></li>";
-            });
-            list.innerHTML = html;
-            list.style.display = "";
+            if (isTable) {
+              html = '<table style="width:100%;border-collapse:collapse;font-size:15px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.06);">' +
+                '<thead><tr style="background:#f8f9fa;border-bottom:2px solid #e9ecef;">' +
+                '<th style="padding:14px 16px;text-align:center;width:60px;color:#868e96;font-weight:500;">#</th>' +
+                '<th style="padding:14px 16px;text-align:left;color:#868e96;font-weight:500;">文章标题</th>' +
+                '<th style="padding:14px 16px;text-align:right;width:100px;color:#868e96;font-weight:500;">阅读量</th>' +
+                '</tr></thead><tbody>';
+              var medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+              pages.forEach(function (p, i) {
+                var rankHtml = i < 3 ? '<span style="font-size:20px">' + medals[i] + '</span>' : '<span style="color:#adb5bd">' + (i + 1) + '</span>';
+                var barPct = Math.min(100, Math.round(p.count / pages[0].count * 100));
+                var title = (p.title || p.path).replace(/\s*-\s*mikigo\.site$/i, '');
+                html += '<tr style="border-bottom:1px solid #f1f3f5;">' +
+                  '<td style="padding:12px 16px;text-align:center;">' + rankHtml + '</td>' +
+                  '<td style="padding:12px 16px;"><a href="' + p.path + '" style="color:#212529;text-decoration:none;">' + title + '</a>' +
+                  '<div style="margin-top:4px;height:3px;background:#f1f3f5;border-radius:2px;overflow:hidden;">' +
+                  '<div style="height:100%;width:' + barPct + '%;background:linear-gradient(90deg,#4a90d9,#67b8e3);border-radius:2px;"></div></div></td>' +
+                  '<td style="padding:12px 16px;text-align:right;font-weight:600;color:#495057;">' + fmt(p.count) + '</td></tr>';
+              });
+              html += '</tbody></table>';
+            } else {
+              pages.forEach(function (p, i) {
+                html += "<li><a href=\"" + p.path + "\">" + (p.title || p.path) + "</a> <span>(" + fmt(p.count) + ")</span></li>";
+              });
+            }
+            el.innerHTML = html;
+            el.style.display = "";
           } catch (e) { /* silent */ }
         };
         xhr.send();
