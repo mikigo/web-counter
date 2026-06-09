@@ -224,3 +224,32 @@ async def get_daily_stats(db_path: str, days: int = 30) -> list:
         })
     await db.close()
     return results
+
+
+async def get_top_pages(db_path: str, limit: int = 10) -> list:
+    """Get top pages by total view count (with offsets applied)."""
+    db = await _connect(db_path)
+
+    # Get page counts
+    cursor = await db.execute(
+        "SELECT path, COUNT(*) as cnt FROM visits GROUP BY path ORDER BY cnt DESC LIMIT ?",
+        (limit,)
+    )
+    rows = await cursor.fetchall()
+
+    # Get all page offsets at once
+    cursor = await db.execute("SELECT key, value FROM offsets WHERE key LIKE 'page_%'")
+    offset_rows = await cursor.fetchall()
+    offsets = {}
+    for row in offset_rows:
+        page_path = row[0][5:]  # Strip 'page_' prefix
+        offsets[page_path] = row[1]
+
+    results = []
+    for row in rows:
+        path = row[0]
+        count = row[1] + offsets.get(path, 0)
+        results.append({"path": path, "count": count})
+
+    await db.close()
+    return results

@@ -21,6 +21,7 @@ from .database import (
     get_counts,
     get_daily_stats,
     get_offsets,
+    get_top_pages,
     init_db,
     record_visit,
     reset_data,
@@ -94,6 +95,11 @@ def create_app(config: Config | None = None) -> FastAPI:
             "site_uv": site_uv,
             "pages": pages,
         }
+
+    # --- Get top pages ---
+    @app.get("/api/top")
+    async def top_pages(limit: int = 10):
+        return await get_top_pages(config.db_path, limit)
 
     # --- Auth helper ---
     def _get_user(request: Request) -> str | None:

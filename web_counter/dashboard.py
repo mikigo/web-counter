@@ -127,6 +127,14 @@ def get_dashboard_html(
   .toast {{ position:fixed; top:20px; right:20px; padding:12px 20px; border-radius:4px; color:#fff; font-size:14px; z-index:999; display:none; }}
   .toast.success {{ background:#27ae60; }}
   .toast.error {{ background:#e74c3c; }}
+  .top-table {{ width:100%; border-collapse:collapse; font-size:14px; }}
+  .top-table th {{ text-align:left; padding:10px 12px; border-bottom:2px solid #eee; color:#999; font-weight:500; }}
+  .top-table td {{ padding:10px 12px; border-bottom:1px solid #f0f0f0; }}
+  .top-table .rank {{ width:40px; color:#999; }}
+  .top-table .rank.top3 {{ color:#e67e22; font-weight:600; }}
+  .top-table .count {{ width:80px; text-align:right; font-weight:500; }}
+  .top-table .path {{ word-break:break-all; }}
+  .top-table tr:hover {{ background:#fafafa; }}
 </style>
 </head>
 <body>
@@ -145,6 +153,14 @@ def get_dashboard_html(
   <div class="section">
     <h2>30 天趋势</h2>
     <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div class="section">
+    <h2>阅读量排行</h2>
+    <table class="top-table">
+      <thead><tr><th class="rank">#</th><th>页面</th><th class="count">阅读量</th></tr></thead>
+      <tbody id="topPagesBody"><tr><td colspan="3" style="text-align:center;color:#999">加载中...</td></tr></tbody>
+    </table>
   </div>
 
   <div class="section">
@@ -267,6 +283,23 @@ def get_dashboard_html(
     location.reload();
   }}
 
+  // Leaderboard
+  function loadTopPages() {{
+    fetch('/api/top?limit=20').then(function(r){{ return r.json(); }}).then(function(pages) {{
+      var html = '';
+      if (pages.length === 0) {{
+        html = '<tr><td colspan="3" style="text-align:center;color:#999">暂无数据</td></tr>';
+      }} else {{
+        pages.forEach(function(p, i) {{
+          var rankClass = i < 3 ? ' top3' : '';
+          html += '<tr><td class="rank' + rankClass + '">' + (i + 1) + '</td><td class="path">' + p.path + '</td><td class="count">' + fmt(p.count) + '</td></tr>';
+        }});
+      }}
+      document.getElementById('topPagesBody').innerHTML = html;
+    }}).catch(function(){{}});
+  }}
+  loadTopPages();
+
   // Auto-refresh every 30s
   setInterval(function() {{
     fetch('/api/count').then(function(r){{ return r.json(); }}).then(function(d) {{
@@ -275,6 +308,7 @@ def get_dashboard_html(
       document.getElementById('sitePv').textContent = fmt(d.site_pv);
       document.getElementById('siteUv').textContent = fmt(d.site_uv);
     }}).catch(function(){{}});
+    loadTopPages();
   }}, 30000);
 </script>
 </body>
