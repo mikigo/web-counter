@@ -96,10 +96,17 @@
             var pvKey = counters.pvPage.getAttribute("data-pv-page") || window.location.pathname;
             if (d.pages[pvKey] !== undefined) counters.pvPage.textContent = fmt(d.pages[pvKey]);
           }
-          // Make visible
-          var firstEl = counters.pvToday || counters.uvToday || counters.pvSite || counters.uvSite || counters.pvPage;
-          if (firstEl) {
-            applyStyle(findContainer(firstEl), styleName);
+          // Make all counter containers visible
+          var allEls = [counters.pvToday, counters.uvToday, counters.pvSite, counters.uvSite, counters.pvPage];
+          var seen = {};
+          for (var i = 0; i < allEls.length; i++) {
+            var el = allEls[i];
+            if (!el) continue;
+            var container = findContainer(el);
+            if (!container || seen[container._wcId]) continue;
+            container._wcId = 1; seen[container._wcId] = true;
+            var s = (container.getAttribute && container.getAttribute("data-counter-style")) || "default";
+            applyStyle(container, s);
           }
         } catch (e) { /* silent */ }
       };
