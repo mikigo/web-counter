@@ -27,10 +27,9 @@
     return el || null;
   }
 
-  function getStyleName() {
-    return (
-      (document.querySelector("[data-counter-style]") || {}).getAttribute("data-counter-style") || "default"
-    );
+  function getStyleName(el) {
+    el = el || document.querySelector("[data-counter-style]");
+    return (el && el.getAttribute) ? (el.getAttribute("data-counter-style") || "default") : "default";
   }
 
   function applyStyle(container, styleName) {
@@ -71,8 +70,6 @@
       var p = el.getAttribute("data-pv-page") || window.location.pathname;
       if (paths.indexOf(p) === -1) paths.push(p);
     });
-
-    var styleName = getStyleName();
 
     try {
       var xhrVisit = new XMLHttpRequest();
