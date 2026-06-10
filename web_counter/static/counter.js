@@ -216,7 +216,21 @@
     init();
   }
 
-  // --- SPA support: watch for re-rendered counter elements ---
+  // --- SPA support: detect URL changes via history API ---
+  var _pushState = history.pushState;
+  history.pushState = function () {
+    _pushState.apply(this, arguments);
+    _lastPath = "";  // Reset to force visit on next refresh
+    setTimeout(function () { refresh(); loadTopWidget(); }, 200);
+  };
+  var _replaceState = history.replaceState;
+  history.replaceState = function () {
+    _replaceState.apply(this, arguments);
+    _lastPath = "";
+    setTimeout(function () { refresh(); loadTopWidget(); }, 200);
+  };
+
+  // --- Also watch for DOM re-renders (belt and suspenders) ---
   if (typeof MutationObserver !== "undefined") {
     var debounce = null;
     var observer = new MutationObserver(function (mutations) {
