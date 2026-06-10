@@ -251,28 +251,28 @@
               node.hasAttribute("data-pv-page")
             )) {
               clearTimeout(debounce);
-              debounce = setTimeout(function () { refresh(); loadTopWidget(); }, 150);
+              debounce = setTimeout(function () { _lastRefresh = 0; refresh(); loadTopWidget(); }, 150);
               return;
             }
             if (node.querySelectorAll) {
               var found = node.querySelectorAll("[data-pv-today],[data-pv-site],[data-uv-today],[data-uv-site],[data-pv-page]");
               if (found.length > 0) {
                 clearTimeout(debounce);
-                debounce = setTimeout(function () { refresh(); loadTopWidget(); }, 150);
+                debounce = setTimeout(function () { _lastRefresh = 0; refresh(); loadTopWidget(); }, 150);
                 return;
               }
             }
             // Also check for top widget re-render
             if (node.hasAttribute && node.hasAttribute("data-pv-top")) {
               clearTimeout(debounce);
-              debounce = setTimeout(function () { refresh(); loadTopWidget(); }, 150);
+              debounce = setTimeout(function () { _lastRefresh = 0; refresh(); loadTopWidget(); }, 150);
               return;
             }
             if (node.querySelectorAll) {
               var foundTop = node.querySelectorAll("[data-pv-top]");
               if (foundTop.length > 0) {
                 clearTimeout(debounce);
-                debounce = setTimeout(function () { refresh(); loadTopWidget(); }, 150);
+                debounce = setTimeout(function () { _lastRefresh = 0; refresh(); loadTopWidget(); }, 150);
                 return;
               }
             }

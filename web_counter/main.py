@@ -209,9 +209,14 @@ def create_app(config: Config | None = None) -> FastAPI:
         offsets = await get_offsets(config.db_path)
         val = offsets.get("top_exclude", "")
         limit_val = offsets.get("top_limit", "20")
+        # limit_val may be int (SQLite INTEGER affinity) or str
+        try:
+            limit = int(limit_val)
+        except (ValueError, TypeError):
+            limit = 20
         return {
             "paths": [p.strip() for p in val.split(",") if p.strip()],
-            "limit": int(limit_val) if limit_val.isdigit() else 20,
+            "limit": limit,
         }
 
     # --- Admin: Set top exclude ---

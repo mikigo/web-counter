@@ -218,5 +218,6 @@ __marimo__/
 .streamlit/secrets.toml
 server.ini
 data/local-test.db
+data/counter.db
 .claude/settings.local.json
 .claude/settings.local.json
