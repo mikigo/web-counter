@@ -8,6 +8,12 @@
 (function () {
   "use strict";
 
+  // Normalize root path for frameworks with cleanUrls:false (e.g. Rspress)
+  if (window.location.pathname === "/") {
+    window.location.replace("/index.html");
+    return;
+  }
+
   // --- API base URL discovery ---
   var scriptTag = document.currentScript;
   var apiBase =
