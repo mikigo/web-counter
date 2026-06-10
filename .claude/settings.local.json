@@ -53,7 +53,12 @@
       "Bash(git -C /c/Users/Administrator/Desktop/code/web-counter commit -m \"docs: polish README with professional structure and engaging content\")",
       "Bash(git -C /c/Users/Administrator/Desktop/code/web-counter commit -m \"feat: data-pv-top on div renders styled leaderboard table\")",
       "Bash(git -C /c/Users/Administrator/Desktop/code/web-counter commit -m \"fix: retry loadTopWidget for React-rendered pages\")",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(ls docs/blog/2026-06* docs/blog/2026-05*)",
+      "Bash(ls doc_build/blog/2026-06-10.*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
     ]
   }
 }

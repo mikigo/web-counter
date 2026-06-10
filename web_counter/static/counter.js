@@ -159,12 +159,18 @@
       return;
     }
     containers.forEach(function (el) {
-      var limit = parseInt(el.getAttribute("data-pv-top")) || 10;
+      var limitAttr = el.getAttribute("data-pv-top");
+      var limit = parseInt(limitAttr);
+      // If no explicit number, let server decide based on dashboard setting
+      var url = apiBase + "/api/top";
+      if (limit) {
+        url += "?limit=" + limit;
+      }
       var isTable = el.tagName === "DIV";
       el.style.display = "none";
       try {
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", apiBase + "/api/top?limit=" + limit, true);
+        xhr.open("GET", url, true);
         xhr.timeout = 3000;
         xhr.onload = function () {
           if (xhr.status !== 200) return;

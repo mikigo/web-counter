@@ -219,3 +219,4 @@ __marimo__/
 server.ini
 data/local-test.db
 .claude/settings.local.json
+.claude/settings.local.json

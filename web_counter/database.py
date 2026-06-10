@@ -247,10 +247,22 @@ async def get_daily_stats(db_path: str, days: int = 30) -> list:
     return results
 
 
-async def get_top_pages(db_path: str, limit: int = 10, exclude: str = "") -> list:
+async def get_top_pages(db_path: str, limit: int = 0, exclude: str = "") -> list:
     """Get top pages by total view count. exclude supports * wildcards (e.g. */index.html)."""
     from urllib.parse import unquote
     db = await _connect(db_path)
+
+    # If limit not explicitly set, check for stored setting (managed via dashboard)
+    if limit <= 0:
+        cursor = await db.execute("SELECT value FROM offsets WHERE key = ?", ("top_limit",))
+        row = await cursor.fetchone()
+        if row and row[0]:
+            try:
+                limit = int(row[0])
+            except (ValueError, TypeError):
+                limit = 10
+        if limit <= 0:
+            limit = 10
 
     exclude_list = [p.strip() for p in exclude.split(",") if p.strip()]
     if not exclude_list:
