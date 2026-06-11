@@ -38,12 +38,24 @@
     return (el && el.getAttribute) ? (el.getAttribute("data-counter-style") || "default") : "default";
   }
 
+  function isDark() {
+    return document.documentElement.classList.contains("dark") ||
+           window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
   function applyStyle(container, styleName) {
     if (!container || !container.tagName) return;
+    var dark = isDark();
     var styles = {
-      badge: "display:inline-block;background:#f0f0f0;border-radius:12px;padding:2px 8px;font-size:13px;",
-      card: "display:inline-block;background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.1);padding:12px 16px;font-size:14px;",
-      bordered: "display:inline-block;border:1px solid #e0e0e0;border-radius:3px;padding:4px 10px;font-size:13px;",
+      badge: dark
+        ? "display:inline-block;background:#333;color:#e0e0e0;border-radius:12px;padding:2px 8px;font-size:13px;"
+        : "display:inline-block;background:#f0f0f0;color:#333;border-radius:12px;padding:2px 8px;font-size:13px;",
+      card: dark
+        ? "display:inline-block;background:#1e1e1e;color:#e0e0e0;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.3);padding:12px 16px;font-size:14px;"
+        : "display:inline-block;background:#fff;color:#333;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.1);padding:12px 16px;font-size:14px;",
+      bordered: dark
+        ? "display:inline-block;border:1px solid #555;color:#e0e0e0;border-radius:3px;padding:4px 10px;font-size:13px;"
+        : "display:inline-block;border:1px solid #e0e0e0;color:#333;border-radius:3px;padding:4px 10px;font-size:13px;",
       default: "display:inline-block;",
     };
     container.style.cssText = styles[styleName] || styles["default"];
@@ -178,23 +190,34 @@
             var pages = JSON.parse(xhr.responseText);
             var html = "";
             if (isTable) {
-              html = '<table style="width:100%;border-collapse:collapse;font-size:15px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.06);">' +
-                '<thead><tr style="background:#f8f9fa;border-bottom:2px solid #e9ecef;">' +
-                '<th style="padding:14px 16px;text-align:center;width:60px;color:#868e96;font-weight:500;">#</th>' +
-                '<th style="padding:14px 16px;text-align:left;color:#868e96;font-weight:500;">文章标题</th>' +
-                '<th style="padding:14px 16px;text-align:right;width:100px;color:#868e96;font-weight:500;">阅读量</th>' +
+              var dk = isDark();
+              var tblBg = dk ? '#1e1e1e' : '#fff';
+              var hdrBg = dk ? '#2d2d2d' : '#f8f9fa';
+              var hdrBorder = dk ? '#444' : '#e9ecef';
+              var hdrColor = dk ? '#aaa' : '#868e96';
+              var rowBorder = dk ? '#333' : '#f1f3f5';
+              var linkColor = dk ? '#e0e0e0' : '#212529';
+              var rankColor = dk ? '#888' : '#adb5bd';
+              var countColor = dk ? '#ccc' : '#495057';
+              var barBg = dk ? '#333' : '#f1f3f5';
+              var boxShadow = dk ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.06)';
+              html = '<table style="width:100%;border-collapse:collapse;font-size:15px;background:' + tblBg + ';border-radius:8px;overflow:hidden;box-shadow:0 1px 6px ' + boxShadow + ';">' +
+                '<thead><tr style="background:' + hdrBg + ';border-bottom:2px solid ' + hdrBorder + ';">' +
+                '<th style="padding:14px 16px;text-align:center;width:60px;color:' + hdrColor + ';font-weight:500;">#</th>' +
+                '<th style="padding:14px 16px;text-align:left;color:' + hdrColor + ';font-weight:500;">文章标题</th>' +
+                '<th style="padding:14px 16px;text-align:right;width:100px;color:' + hdrColor + ';font-weight:500;">阅读量</th>' +
                 '</tr></thead><tbody>';
               var medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
               pages.forEach(function (p, i) {
-                var rankHtml = i < 3 ? '<span style="font-size:20px">' + medals[i] + '</span>' : '<span style="color:#adb5bd">' + (i + 1) + '</span>';
+                var rankHtml = i < 3 ? '<span style="font-size:20px">' + medals[i] + '</span>' : '<span style="color:' + rankColor + '">' + (i + 1) + '</span>';
                 var barPct = Math.min(100, Math.round(p.count / pages[0].count * 100));
                 var title = (p.title || p.path).replace(/\s*-\s*mikigo\.site$/i, '');
-                html += '<tr style="border-bottom:1px solid #f1f3f5;">' +
+                html += '<tr style="border-bottom:1px solid ' + rowBorder + ';">' +
                   '<td style="padding:12px 16px;text-align:center;">' + rankHtml + '</td>' +
-                  '<td style="padding:12px 16px;"><a href="' + p.path + '" style="color:#212529;text-decoration:none;">' + title + '</a>' +
-                  '<div style="margin-top:4px;height:3px;background:#f1f3f5;border-radius:2px;overflow:hidden;">' +
+                  '<td style="padding:12px 16px;"><a href="' + p.path + '" style="color:' + linkColor + ';text-decoration:none;">' + title + '</a>' +
+                  '<div style="margin-top:4px;height:3px;background:' + barBg + ';border-radius:2px;overflow:hidden;">' +
                   '<div style="height:100%;width:' + barPct + '%;background:linear-gradient(90deg,#4a90d9,#67b8e3);border-radius:2px;"></div></div></td>' +
-                  '<td style="padding:12px 16px;text-align:right;font-weight:600;color:#495057;">' + fmt(p.count) + '</td></tr>';
+                  '<td style="padding:12px 16px;text-align:right;font-weight:600;color:' + countColor + ';">' + fmt(p.count) + '</td></tr>';
               });
               html += '</tbody></table>';
             } else {
