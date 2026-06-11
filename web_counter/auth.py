@@ -2,11 +2,12 @@
 
 import secrets
 import time
+from typing import Dict, Optional
 
 import bcrypt
 
 # In-memory session store: token -> {"username": str, "created_at": float}
-_sessions: dict[str, dict] = {}
+_sessions: Dict[str, dict] = {}
 
 SESSION_MAX_AGE = 86400  # 24 hours
 
@@ -28,7 +29,7 @@ def create_session(username: str) -> str:
     return token
 
 
-def validate_session(token: str) -> str | None:
+def validate_session(token: str) -> Optional[str]:
     """Validate a session token. Returns username if valid, None otherwise."""
     if token not in _sessions:
         return None

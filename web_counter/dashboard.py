@@ -1,6 +1,7 @@
 """Dashboard and login page server-rendered HTML."""
 
 import json
+from typing import Dict, List, Optional
 
 
 def get_login_html(error: str = "") -> str:
@@ -59,8 +60,8 @@ def get_dashboard_html(
     today_uv: int = 0,
     site_pv: int = 0,
     site_uv: int = 0,
-    offsets: dict | None = None,
-    daily_stats: list | None = None,
+    offsets: Optional[Dict] = None,
+    daily_stats: Optional[List] = None,
 ) -> str:
     """Return the dashboard page HTML with embedded data."""
     if offsets is None:

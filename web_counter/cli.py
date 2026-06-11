@@ -8,9 +8,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 
-def _read_pid(pid_file: str) -> int | None:
+def _read_pid(pid_file: str) -> Optional[int]:
     """Read PID from file."""
     try:
         with open(pid_file, "r") as f:
@@ -19,7 +20,7 @@ def _read_pid(pid_file: str) -> int | None:
         return None
 
 
-def _is_running(pid: int | None) -> bool:
+def _is_running(pid: Optional[int]) -> bool:
     """Check if a process with given PID is running."""
     if pid is None:
         return False

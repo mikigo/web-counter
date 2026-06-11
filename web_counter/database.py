@@ -3,6 +3,7 @@
 import datetime
 import os
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import aiosqlite
 
@@ -161,7 +162,7 @@ async def reset_data(db_path: str, scope: str, path: str = None):
     await db.close()
 
 
-async def get_offsets(db_path: str) -> dict:
+async def get_offsets(db_path: str) -> Dict:
     """Get all offset values."""
     db = await _connect(db_path)
     cursor = await db.execute("SELECT key, value FROM offsets")
@@ -173,7 +174,7 @@ async def get_offsets(db_path: str) -> dict:
     return result
 
 
-async def set_offsets(db_path: str, data: dict):
+async def set_offsets(db_path: str, data: Dict):
     """Set offset values."""
     db = await _connect(db_path)
 
@@ -209,7 +210,7 @@ async def create_admin(db_path: str, username: str, password_hash: str):
     await db.close()
 
 
-async def get_admin(db_path: str, username: str) -> dict | None:
+async def get_admin(db_path: str, username: str) -> Optional[Dict]:
     """Get admin user by username."""
     db = await _connect(db_path)
     cursor = await db.execute(
@@ -222,7 +223,7 @@ async def get_admin(db_path: str, username: str) -> dict | None:
     return None
 
 
-async def get_daily_stats(db_path: str, days: int = 30) -> list:
+async def get_daily_stats(db_path: str, days: int = 30) -> List:
     """Get daily PV/UV stats for the last N days."""
     today = datetime.date.today()
     day_list = [(today - datetime.timedelta(days=i)).isoformat() for i in range(days - 1, -1, -1)]
@@ -247,7 +248,7 @@ async def get_daily_stats(db_path: str, days: int = 30) -> list:
     return results
 
 
-async def get_top_pages(db_path: str, limit: int = 0, exclude: str = "") -> list:
+async def get_top_pages(db_path: str, limit: int = 0, exclude: str = "") -> List:
     """Get top pages by total view count. exclude supports * wildcards (e.g. */index.html)."""
     from urllib.parse import unquote
     db = await _connect(db_path)

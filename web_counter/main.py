@@ -3,6 +3,7 @@
 import hashlib
 import logging
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, Request, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,7 +35,7 @@ from .rate_limit import RateLimiter
 logger = logging.getLogger("web-counter")
 
 
-def create_app(config: Config | None = None) -> FastAPI:
+def create_app(config: Optional[Config] = None) -> FastAPI:
     """Create and configure the FastAPI application."""
     if config is None:
         config = Config()
@@ -105,7 +106,7 @@ def create_app(config: Config | None = None) -> FastAPI:
         return await get_top_pages(config.db_path, limit, exclude)
 
     # --- Auth helper ---
-    def _get_user(request: Request) -> str | None:
+    def _get_user(request: Request) -> Optional[str]:
         token = request.cookies.get("session")
         if not token:
             return None

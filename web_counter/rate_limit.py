@@ -2,6 +2,7 @@
 
 import time
 from collections import defaultdict
+from typing import Dict
 
 
 class RateLimiter:
@@ -9,7 +10,7 @@ class RateLimiter:
 
     def __init__(self, max_requests: int = 60):
         self.max_requests = max_requests
-        self._buckets: dict[str, dict] = defaultdict(
+        self._buckets: Dict[str, dict] = defaultdict(
             lambda: {"tokens": max_requests, "last_reset": time.time()}
         )
 
